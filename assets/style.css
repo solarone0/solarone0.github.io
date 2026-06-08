@@ -1,0 +1,67 @@
+body {
+  max-width: 760px;
+  margin: 40px auto;
+  padding: 0 16px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 18px;
+  line-height: 1.6;
+  color: #111;
+  background: #fff;
+}
+
+a {
+  color: #00e;
+}
+
+a:visited {
+  color: #551a8b;
+}
+
+header {
+  margin-bottom: 40px;
+}
+
+header h1 {
+  margin-bottom: 8px;
+  font-size: 28px;
+  font-weight: normal;
+}
+
+nav a {
+  margin-right: 12px;
+}
+
+main {
+  margin-bottom: 48px;
+}
+
+footer {
+  margin-top: 48px;
+  font-size: 14px;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.25;
+}
+
+pre,
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+pre {
+  overflow-x: auto;
+  padding: 12px;
+  border: 1px solid #ccc;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+ul {
+  padding-left: 24px;
+}

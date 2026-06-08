@@ -1,0 +1,15 @@
+title: "solarone0"
+description: "A minimal markdown blog."
+url: "https://solarone0.github.io"
+baseurl: ""
+
+permalink: /:year/:month/:day/:title/
+
+markdown: kramdown
+
+plugins:
+  - jekyll-feed
+
+exclude:
+  - README.md
+  - PLAN.md
