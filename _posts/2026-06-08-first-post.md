@@ -1,14 +1,6 @@
 ---
 layout: post
-title: First Post
+title: 첫 번째 포스팅
 ---
 
-This is the first post.
-
-The blog is intentionally minimal.
-
-## Notes
-
-- Written in Markdown
-- Built by Jekyll
-- Hosted on GitHub Pages
+테스트 포스트입니다.
