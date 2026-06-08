@@ -36,9 +36,3 @@ GitHub Pages settings:
 ```text
 Settings -> Pages -> Source: Deploy from a branch -> main -> /root
 ```
-
-## CMS
-
-Open `/cms/` to write a post in Markdown with a side-by-side preview.
-
-Use `Copy MD` or `Download`, then place the file in `_posts`.
