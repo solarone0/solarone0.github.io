@@ -6,11 +6,6 @@ permalink: /about/
 
 # About
 
-This is a minimal static blog.
+2026-06-08 기준
 
-- Markdown-based writing
-- GitHub Pages hosting
-- Jekyll build
-- No server
-- No database
-- No JavaScript framework
+- 직장 생활 10년 차
