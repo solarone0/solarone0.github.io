@@ -7,6 +7,8 @@ $ErrorActionPreference = "Stop"
 $repo = Split-Path -Parent $PSScriptRoot
 Set-Location $repo
 
+& "$PSScriptRoot\normalize-post-filenames.ps1"
+
 $changedPosts = git status --porcelain -- _posts |
   ForEach-Object { $_.Substring(3).Trim('"') } |
   Where-Object { $_ }

@@ -2,6 +2,34 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Blog: new post today",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/scripts/new-post.ps1",
+        "-Title",
+        "${input:postTitle}"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Blog: normalize post filenames",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/scripts/normalize-post-filenames.ps1"
+      ],
+      "problemMatcher": []
+    },
+    {
       "label": "Blog: publish changed posts",
       "type": "shell",
       "command": "powershell",
@@ -17,6 +45,14 @@
         "isDefault": true
       },
       "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "postTitle",
+      "type": "promptString",
+      "description": "Post title",
+      "default": "New Post"
     }
   ]
 }
