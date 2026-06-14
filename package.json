@@ -1,0 +1,9 @@
+{
+  "name": "solarone0-blog",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "blog:cms": "node scripts/blog-cms-server.js",
+    "cms": "node scripts/blog-cms-server.js"
+  }
+}

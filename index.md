@@ -3,12 +3,6 @@ layout: default
 title: Home
 ---
 
-# Home
-
-A minimal markdown blog.
-
-## Posts
-
 <ul class="post-list">
 {% for post in site.posts %}
   <li>

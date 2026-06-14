@@ -4,6 +4,48 @@ A minimal Markdown-based static blog for GitHub Pages.
 
 ## Write a post
 
+Local CMS:
+
+From `C:\Users\solar`:
+
+```powershell
+npm run blog:cms
+```
+
+From the `AGENTS` workspace root:
+
+```powershell
+npm run blog:cms
+```
+
+From this `blog` folder:
+
+```powershell
+npm run blog:cms
+```
+
+If PowerShell is somewhere else, move home first:
+
+```powershell
+cd ~
+npm run blog:cms
+```
+
+Open the printed `http://127.0.0.1:8787/cms/?token=...` URL. The CMS server binds to localhost only and requires the startup token for save/publish actions, so GitHub Pages visitors cannot write posts. The `Write` nav link is only shown on local hosts.
+
+CMS features:
+
+- Open Blog opens the public GitHub Pages site.
+- Published saves to `_posts`; Draft saves to `_drafts`.
+- Delete removes the selected post or draft locally.
+- Delete & Publish shows the target and pending file list, removes the selected post or draft, then runs the publish script.
+- Image uploads save to `assets/images` and insert Markdown at the cursor.
+- Search filters the CMS post/draft list by title, filename, or status.
+- The top change panel shows local publish targets before you publish.
+- Publish shows the pending file list first, then opens the public blog after success.
+
+Manual file:
+
 Create a file in `_posts`:
 
 ```text

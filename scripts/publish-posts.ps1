@@ -7,29 +7,33 @@ $ErrorActionPreference = "Stop"
 $repo = Split-Path -Parent $PSScriptRoot
 Set-Location $repo
 
-$changedPosts = git status --porcelain -- _posts |
+$changedPosts = git status --porcelain -- _posts _drafts assets/images |
   ForEach-Object { $_.Substring(3).Trim('"') } |
   Where-Object { $_ }
 
 if (-not $changedPosts) {
-  Write-Host "No changed posts in _posts."
+  Write-Host "No changed blog content."
   exit 0
 }
 
-Write-Host "Changed posts:"
+Write-Host "Changed blog content:"
 $changedPosts | ForEach-Object { Write-Host " - $_" }
 
-git add -- _posts
+git add -- _posts _drafts assets/images
 
 if (-not $Message) {
-  $firstPost = $changedPosts | Select-Object -First 1
-  $titleLine = Select-String -Path $firstPost -Pattern '^title:\s*(.+)$' -Encoding UTF8 | Select-Object -First 1
+  $firstPost = $changedPosts | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+  $titleLine = $null
+
+  if ($firstPost) {
+    $titleLine = Select-String -Path $firstPost -Pattern '^title:\s*(.+)$' -Encoding UTF8 | Select-Object -First 1
+  }
 
   if ($titleLine) {
     $title = $titleLine.Matches[0].Groups[1].Value.Trim().Trim('"').Trim("'")
     $Message = "Publish post: $title"
   } else {
-    $Message = "Publish blog post"
+    $Message = "Publish blog changes"
   }
 }
 

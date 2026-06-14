@@ -13,3 +13,7 @@ plugins:
 exclude:
   - README.md
   - PLAN.md
+  - posts
+  - scripts
+  - package.json
+  - package-lock.json

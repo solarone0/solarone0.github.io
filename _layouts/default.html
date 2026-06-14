@@ -15,6 +15,7 @@
       <a href="{{ '/' | relative_url }}">Home</a>
       <a href="{{ '/about' | relative_url }}">About</a>
       <a href="{{ '/feed.xml' | relative_url }}">RSS</a>
+      <a class="owner-only" href="http://127.0.0.1:8787/cms/" hidden>Write</a>
     </nav>
   </header>
 
@@ -25,5 +26,14 @@
   <footer>
     <p>&copy; {{ site.time | date: "%Y" }} {{ site.title }}</p>
   </footer>
+  <script>
+    (function () {
+      var localHosts = ["localhost", "127.0.0.1", "::1"];
+      if (localHosts.indexOf(window.location.hostname) === -1) return;
+      document.querySelectorAll(".owner-only").forEach(function (item) {
+        item.hidden = false;
+      });
+    }());
+  </script>
 </body>
 </html>
