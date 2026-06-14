@@ -2,6 +2,7 @@ title: "solarone0"
 description: "A minimal markdown blog."
 url: "https://solarone0.github.io"
 baseurl: ""
+google_analytics: ""
 
 permalink: /:year/:month/:day/:title/
 

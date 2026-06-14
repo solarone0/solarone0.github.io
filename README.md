@@ -78,3 +78,24 @@ GitHub Pages settings:
 ```text
 Settings -> Pages -> Source: Deploy from a branch -> main -> /root
 ```
+
+## Traffic analytics
+
+This blog has a GA4 Google tag hook in `_layouts/default.html`.
+
+1. In Google Analytics, create or open a GA4 property for `https://solarone0.github.io`.
+2. Add a Web data stream for `https://solarone0.github.io`.
+3. Copy the Measurement ID that starts with `G-`.
+4. Put it in `_config.yml`:
+
+```yaml
+google_analytics: "G-XXXXXXXXXX"
+```
+
+The tag only renders in production builds, so local CMS/editor pages are not tracked.
+
+Check the local analytics setup:
+
+```powershell
+npm run analytics:check
+```

@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "analytics:check": "node scripts/check-analytics.js",
     "blog:cms": "node scripts/blog-cms-server.js",
     "cms": "node scripts/blog-cms-server.js"
   }
