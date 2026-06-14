@@ -58,10 +58,20 @@ function safePath(collection, filename) {
   return resolved;
 }
 
-function markdownDocument({ title, date, body, draft }) {
+function tagList(value) {
+  return String(value || "")
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+}
+
+function markdownDocument({ title, date, description, tags, body, draft }) {
   const safeTitle = String(title || "Untitled").replace(/\\/g, "\\\\").replace(/"/g, '\\"');
   const lines = ["---", "layout: post", `title: "${safeTitle}"`];
   if (date) lines.push(`date: ${date}`);
+  if (description) lines.push(`description: "${String(description).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`);
+  const cleanTags = tagList(tags);
+  if (cleanTags.length) lines.push(`tags: [${cleanTags.map((tag) => `"${tag.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(", ")}]`);
   if (draft) lines.push("published: false");
   lines.push("---", "", String(body || "").trim(), "");
   return lines.join("\n");
@@ -72,10 +82,16 @@ function readFrontMatter(markdown) {
   const frontMatter = match ? match[1] : "";
   const body = match ? markdown.slice(match[0].length).trim() : markdown.trim();
   const data = {};
+  let currentKey = "";
   frontMatter.split(/\r?\n/).forEach((line) => {
+    if (currentKey && /^\s+-\s+/.test(line)) {
+      data[currentKey] = `${data[currentKey] || ""}, ${line.replace(/^\s+-\s+/, "").trim()}`.replace(/^,\s*/, "");
+      return;
+    }
     const item = line.match(/^([A-Za-z0-9_-]+):\s*(.*)$/);
     if (!item) return;
-    data[item[1]] = item[2].trim().replace(/^["']|["']$/g, "");
+    currentKey = item[1];
+    data[item[1]] = item[2].trim().replace(/^["']|["']$/g, "").replace(/^\[|\]$/g, "").replace(/"/g, "");
   });
   return { data, body };
 }
@@ -105,12 +121,15 @@ async function listCollection(collection) {
   const files = (await readdir(dir)).filter((file) => file.endsWith(".md")).sort().reverse();
   return Promise.all(files.map(async (file) => {
     const markdown = await readFile(path.join(dir, file), "utf8");
+    const parsed = readFrontMatter(markdown);
     return {
       collection,
       file,
       title: parseTitle(markdown, file),
       date: parseDate(markdown, file),
-      slug: parseSlug(file)
+      slug: parseSlug(file),
+      description: parsed.data.description || "",
+      tags: parsed.data.tags || ""
     };
   }));
 }
@@ -167,6 +186,8 @@ async function saveContent(data) {
   await writeFile(safePath(collection, filename), markdownDocument({
     title: data.title,
     date,
+    description: data.description,
+    tags: data.tags,
     body: data.body,
     draft: collection === "draft"
   }), "utf8");
@@ -223,6 +244,7 @@ function cmsHtml() {
     .post-list button.active { border-color: #111; background: #f1f1f1; }
     .badge { display: inline-block; margin-right: 6px; font: 11px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #555; }
     .meta { display: grid; grid-template-columns: minmax(160px, 1.5fr) 150px minmax(140px, 1fr); gap: 10px; margin-bottom: 10px; }
+    .seo-meta { display: grid; grid-template-columns: minmax(200px, 1fr) minmax(160px, 0.8fr); gap: 10px; margin-bottom: 10px; }
     label, label span { display: block; }
     label span { margin-bottom: 4px; font-size: 13px; color: #444; }
     input, textarea, button { font: inherit; }
@@ -251,6 +273,7 @@ function cmsHtml() {
       aside, .viewer { border: 0; padding: 0; }
       aside { border-bottom: 1px solid #ddd; padding-bottom: 12px; }
       .meta { grid-template-columns: 1fr; }
+      .seo-meta { grid-template-columns: 1fr; }
       textarea { height: 45vh; min-height: 340px; }
       .viewer { min-height: 50vh; border-top: 1px solid #ddd; padding-top: 12px; }
     }
@@ -285,6 +308,10 @@ function cmsHtml() {
         <label><span>Date</span><input id="date" type="date"></label>
         <label><span>Slug</span><input id="slug" type="text" autocomplete="off" value="new-post"></label>
       </div>
+      <div class="seo-meta">
+        <label><span>Description</span><input id="description" type="text" autocomplete="off" maxlength="180"></label>
+        <label><span>Tags</span><input id="tags" type="text" autocomplete="off" placeholder="essay, life"></label>
+      </div>
       <label><span>Markdown</span><textarea id="body" spellcheck="true">Write in Markdown.</textarea></label>
       <input id="imageFile" type="file" accept="image/png,image/jpeg,image/gif,image/webp">
     </form>
@@ -295,6 +322,7 @@ function cmsHtml() {
           <button id="copy" type="button">Copy</button>
           <button id="save" type="button">Save</button>
           <button id="uploadImage" type="button">Image</button>
+          <button id="previewPost" type="button">Preview</button>
           <button class="danger" id="deletePost" type="button">Delete</button>
           <button class="danger" id="deletePublish" type="button">Delete & Publish</button>
           <button id="publish" type="button">Publish</button>
@@ -314,6 +342,8 @@ function cmsHtml() {
       title: document.getElementById("title"),
       date: document.getElementById("date"),
       slug: document.getElementById("slug"),
+      description: document.getElementById("description"),
+      tags: document.getElementById("tags"),
       body: document.getElementById("body"),
       preview: document.getElementById("preview"),
       filename: document.getElementById("filename"),
@@ -375,6 +405,9 @@ function cmsHtml() {
     }
     function markdownFile() {
       var lines = ["---", "layout: post", 'title: "' + els.title.value.replace(/\\\\/g, "\\\\\\\\").replace(/"/g, '\\\\"') + '"', "date: " + els.date.value];
+      if (els.description.value.trim()) lines.push('description: "' + els.description.value.replace(/\\\\/g, "\\\\\\\\").replace(/"/g, '\\\\"') + '"');
+      var tags = els.tags.value.split(",").map(function (tag) { return tag.trim(); }).filter(Boolean);
+      if (tags.length) lines.push("tags: [" + tags.map(function (tag) { return '"' + tag.replace(/\\\\/g, "\\\\\\\\").replace(/"/g, '\\\\"') + '"'; }).join(", ") + "]");
       if (getCollection() === "draft") lines.push("published: false");
       lines.push("---", "", els.body.value.trim(), "");
       return lines.join("\\n");
@@ -382,8 +415,11 @@ function cmsHtml() {
     function setStatus(text) { els.status.textContent = text; }
     function update() {
       els.filename.textContent = (getCollection() === "draft" ? "_drafts/" : "_posts/") + getFilename();
-      els.preview.innerHTML = "<h1>" + inlineMarkdown(els.title.value || "Untitled") + "</h1><p><time>" + escapeHtml(els.date.value) + "</time></p>" + renderMarkdown(els.body.value);
-      localStorage.setItem("blog-cms-draft", JSON.stringify({ title: els.title.value, date: els.date.value, slug: els.slug.value, body: els.body.value, collection: getCollection() }));
+      var meta = "<p><time>" + escapeHtml(els.date.value) + "</time></p>";
+      if (els.description.value.trim()) meta += "<p>" + inlineMarkdown(els.description.value) + "</p>";
+      if (els.tags.value.trim()) meta += "<p>" + escapeHtml(els.tags.value) + "</p>";
+      els.preview.innerHTML = "<h1>" + inlineMarkdown(els.title.value || "Untitled") + "</h1>" + meta + renderMarkdown(els.body.value);
+      localStorage.setItem("blog-cms-draft", JSON.stringify({ title: els.title.value, date: els.date.value, slug: els.slug.value, description: els.description.value, tags: els.tags.value, body: els.body.value, collection: getCollection() }));
     }
     async function api(path, options) {
       var res = await fetch(path, { ...options, headers: { "Content-Type": "application/json", "X-CMS-Token": token, ...(options && options.headers || {}) } });
@@ -422,6 +458,8 @@ function cmsHtml() {
           els.title.value = item.title;
           els.date.value = item.date;
           els.slug.value = item.slug;
+          els.description.value = item.description || "";
+          els.tags.value = item.tags || "";
           els.body.value = item.body;
           currentFile = item.file;
           currentCollection = item.collection;
@@ -441,6 +479,8 @@ function cmsHtml() {
       els.title.value = "New Post";
       els.date.value = today();
       els.slug.value = "new-post";
+      els.description.value = "";
+      els.tags.value = "";
       els.body.value = "Write in Markdown.";
       currentFile = "";
       currentCollection = getCollection();
@@ -460,6 +500,8 @@ function cmsHtml() {
         title: els.title.value,
         date: els.date.value,
         slug: els.slug.value,
+        description: els.description.value,
+        tags: els.tags.value,
         body: els.body.value,
         collection: getCollection(),
         previousCollection: currentFile ? currentCollection : "",
@@ -514,6 +556,9 @@ function cmsHtml() {
       } catch (error) { setStatus(error.message); }
     };
     document.getElementById("uploadImage").onclick = function () { els.imageFile.click(); };
+    document.getElementById("previewPost").onclick = function () {
+      window.open(siteUrl + "/" + els.date.value.slice(0, 4) + "/" + els.date.value.slice(5, 7) + "/" + els.date.value.slice(8, 10) + "/" + slugify(els.slug.value || els.title.value) + "/", "_blank", "noopener");
+    };
     els.imageFile.onchange = function () {
       var file = els.imageFile.files && els.imageFile.files[0];
       if (!file) return;
@@ -547,6 +592,8 @@ function cmsHtml() {
           els.title.value = draft.title || els.title.value;
           els.date.value = draft.date || els.date.value;
           els.slug.value = draft.slug || els.slug.value;
+          els.description.value = draft.description || els.description.value;
+          els.tags.value = draft.tags || els.tags.value;
           els.body.value = draft.body || els.body.value;
           setCollection(draft.collection || "post");
         }
@@ -591,6 +638,8 @@ const server = createServer(async (req, res) => {
         title: parsed.data.title || parseTitle(markdown, file),
         date: parsed.data.date || parseDate(markdown, file),
         slug: parseSlug(file),
+        description: parsed.data.description || "",
+        tags: parsed.data.tags || "",
         body: parsed.body
       });
       return;
@@ -623,6 +672,8 @@ const server = createServer(async (req, res) => {
         title: parsed.data.title || parseTitle(markdown, file),
         date: parsed.data.date || parseDate(markdown, file),
         slug: parseSlug(file),
+        description: parsed.data.description || "",
+        tags: parsed.data.tags || "",
         body: parsed.body
       });
       return;

@@ -37,6 +37,8 @@ CMS features:
 
 - Open Blog opens the public GitHub Pages site.
 - Published saves to `_posts`; Draft saves to `_drafts`.
+- Description and Tags write SEO front matter into the Markdown file.
+- Preview opens the post URL that will exist after the post is published.
 - Delete removes the selected post or draft locally.
 - Delete & Publish shows the target and pending file list, removes the selected post or draft, then runs the publish script.
 - Image uploads save to `assets/images` and insert Markdown at the cursor.
@@ -98,6 +100,25 @@ Check the local analytics setup:
 
 ```powershell
 npm run analytics:check
+```
+
+## Google Search Console
+
+The site is ready for Google Search Console verification.
+
+1. Open Search Console and add `https://solarone0.github.io`.
+2. Choose the HTML tag verification method.
+3. Copy only the `content="..."` value.
+4. Put it in `_config.yml`:
+
+```yaml
+google_site_verification: "PASTE_CONTENT_VALUE_HERE"
+```
+
+After verification, submit this sitemap in Search Console:
+
+```text
+https://solarone0.github.io/sitemap.xml
 ```
 
 ## SEO checks

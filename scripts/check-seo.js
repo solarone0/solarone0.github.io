@@ -22,6 +22,7 @@ const checks = [
   ["site description", /^description:\s*["']?.{10,}/m.test(config)],
   ["site author", /^author:\s*["']?.+/m.test(config)],
   ["site lang", /^lang:\s*["']?ko/m.test(config)],
+  ["search console verification hook", /^google_site_verification:/m.test(config) && layout.includes('name="google-site-verification"')],
   ["robots sitemap", robots.includes("Sitemap: {{ '/sitemap.xml' | absolute_url }}")],
   ["sitemap urlset", sitemap.includes("<urlset") && sitemap.includes("site.posts")],
   ...requiredInLayout.map((needle) => [`layout ${needle}`, layout.includes(needle)])
