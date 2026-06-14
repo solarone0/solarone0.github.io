@@ -121,6 +121,12 @@ After verification, submit this sitemap in Search Console:
 https://solarone0.github.io/sitemap.xml
 ```
 
+Check the local Search Console readiness:
+
+```powershell
+npm run search-console:check
+```
+
 ## SEO checks
 
 Run the local SEO guard before publishing layout changes:

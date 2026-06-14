@@ -6,6 +6,7 @@
     "analytics:check": "node scripts/check-analytics.js",
     "blog:cms": "node scripts/blog-cms-server.js",
     "cms": "node scripts/blog-cms-server.js",
+    "search-console:check": "node scripts/check-search-console.js",
     "seo:check": "node scripts/check-seo.js"
   }
 }
