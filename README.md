@@ -99,3 +99,13 @@ Check the local analytics setup:
 ```powershell
 npm run analytics:check
 ```
+
+## SEO checks
+
+Run the local SEO guard before publishing layout changes:
+
+```powershell
+npm run seo:check
+```
+
+The site includes canonical URLs, robots directives, Open Graph/Twitter previews, JSON-LD structured data, `robots.txt`, and `sitemap.xml`.

@@ -1,8 +1,10 @@
 title: "solarone0"
-description: "A minimal markdown blog."
+description: "solarone0의 개인 블로그."
 url: "https://solarone0.github.io"
 baseurl: ""
 google_analytics: "G-7964S4Z1K5"
+author: "solarone0"
+lang: "ko"
 
 permalink: /:year/:month/:day/:title/
 
