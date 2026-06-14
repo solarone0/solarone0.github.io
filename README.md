@@ -106,7 +106,17 @@ npm run analytics:check
 
 The site is ready for Google Search Console verification.
 
-1. Open Search Console and add `https://solarone0.github.io`.
+Option A: Google Analytics verification
+
+1. Open Search Console with the same Google account that manages the GA4 property.
+2. Add `https://solarone0.github.io` as a URL-prefix property.
+3. Choose the Google Analytics verification method.
+
+This works only when that Google account has edit access to the GA property and the live homepage contains the GA tag.
+
+Option B: HTML tag verification
+
+1. Open Search Console and add `https://solarone0.github.io` as a URL-prefix property.
 2. Choose the HTML tag verification method.
 3. Copy only the `content="..."` value.
 4. Put it in `_config.yml`:

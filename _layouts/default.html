@@ -19,7 +19,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="{{ seo_description | escape }}">
   <meta name="robots" content="{{ page.robots | default: 'index, follow, max-image-preview:large' }}">
-  {% if site.google_site_verification %}
+  {% if site.google_site_verification and site.google_site_verification != "" %}
   <meta name="google-site-verification" content="{{ site.google_site_verification }}">
   {% endif %}
   <link rel="canonical" href="{{ canonical_url }}">
