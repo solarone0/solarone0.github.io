@@ -7,7 +7,9 @@ const requiredInLayout = [
   "property=\"og:title\"",
   "property=\"og:description\"",
   "property=\"og:url\"",
+  "property=\"og:image\"",
   "name=\"twitter:card\"",
+  "name=\"twitter:image\"",
   "application/ld+json"
 ];
 
@@ -22,6 +24,7 @@ const checks = [
   ["site description", /^description:\s*["']?.{10,}/m.test(config)],
   ["site author", /^author:\s*["']?.+/m.test(config)],
   ["site lang", /^lang:\s*["']?ko/m.test(config)],
+  ["site og image", /^og_image:\s*["']?\/assets\/.+\.(png|jpg|jpeg|webp)["']?\s*$/m.test(config)],
   ["search console verification hook", /^google_site_verification:/m.test(config) && layout.includes('name="google-site-verification"')],
   ["robots sitemap", robots.includes("Sitemap: {{ '/sitemap.xml' | absolute_url }}")],
   ["sitemap urlset", sitemap.includes("<urlset") && sitemap.includes("site.posts")],

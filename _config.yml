@@ -1,5 +1,7 @@
 title: "이대희의 블로그"
-description: "이대희의 개인 블로그입니다."
+description: "기록과 생각을 담는 개인 블로그입니다."
+subtitle: "기록과 생각을 담는 개인 블로그"
+og_image: "/assets/og-image.png"
 url: "https://solarone0.github.io"
 baseurl: ""
 google_analytics: "G-7964S4Z1K5"
