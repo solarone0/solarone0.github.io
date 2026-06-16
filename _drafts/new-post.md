@@ -2,7 +2,6 @@
 layout: post
 title: "자산의 증식"
 date: 2026-06-15
-category: "경제"
 published: false
 ---
 
