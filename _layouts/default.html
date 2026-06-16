@@ -97,6 +97,14 @@
   </main>
 
   <footer>
+    {% assign posts_by_year = site.posts | group_by_exp: "post", "post.date | date: '%Y'" %}
+    {% if posts_by_year.size > 0 %}
+    <nav class="year-links" aria-label="Posts by year">
+      {% for year in posts_by_year %}
+      <a href="{{ '/' | relative_url }}#year-{{ year.name }}">{{ year.name }}</a>
+      {% endfor %}
+    </nav>
+    {% endif %}
     <p>&copy; {{ site.time | date: "%Y" }} {{ site.title }}</p>
   </footer>
   <script>
