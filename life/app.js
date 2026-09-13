@@ -87,7 +87,7 @@ function render() {
   const syncButton=$('#sync-now');if(syncButton)syncButton.textContent=(localServer||webHosted)?syncInfo.message:'이 브라우저에 저장';
   if(webHosted)$('#view-root .data-footer>div').insertAdjacentHTML('beforeend','<button id="web-disconnect">연결 해제</button>');
 }
-function navigate(v) { view=v; projectFilter=''; closeDrawer(); closeSidebar(); render(); }
+function navigate(v) { view=v; projectFilter=''; if(v==='tasks'){filter='active';search='';$('#global-search').value='';} closeDrawer(); closeSidebar(); render(); }
 function openTaskForm(parentId='') { $('#task-form').reset(); $('#task-parent').innerHTML='<option value="">없음</option>'+options(state.tasks.filter(t=>taskDepth(t)<5).map(t=>t.id),state.tasks.filter(t=>taskDepth(t)<5).map(t=>t.title),parentId); $('#task-project-select').innerHTML='<option value="">미분류</option>'+options(state.projects.map(p=>p.id),state.projects.map(p=>p.name),taskOf(parentId)?.project||projectFilter); $('#task-modal').showModal(); }
 function closeDrawer() { $('#task-drawer').classList.remove('open'); $('#task-drawer').setAttribute('aria-hidden','true'); selectedId=''; }
 function openDrawer(id) {
@@ -233,7 +233,7 @@ document.addEventListener('click',e=>{
   if(b.dataset.check){e.stopPropagation();const t=taskOf(b.dataset.check);updateTask(t.id,{status:complete(t)?'Not Started':'Done'});return;}
   if(b.dataset.view)return navigate(b.dataset.view);
   if(b.dataset.task)return openDrawer(b.dataset.task);
-  if(b.dataset.project){projectFilter=b.dataset.project;view='tasks';filter='all';render();return;}
+  if(b.dataset.project){projectFilter=b.dataset.project;view='tasks';filter='active';search='';$('#global-search').value='';render();return;}
   if(b.dataset.filter){filter=b.dataset.filter;render();return;}
   if(b.dataset.layout){layout=b.dataset.layout;render();return;}
   if(b.dataset.habit){const h=state.habits.find(h=>h.id===b.dataset.habit);toggleHabit(h,b.dataset.day);return;}
@@ -254,7 +254,7 @@ $('#web-auth-form').addEventListener('submit',async e=>{
   catch(err){webCredential=previous;$('#web-auth-error').textContent=err.name==='AbortError'?'연결 시간이 초과됐어. 다시 시도해줘.':err.message;}
   finally{button.disabled=false;}
 });
-$('#global-search').addEventListener('input',e=>{search=e.target.value;view='tasks';filter='all';render();});
+$('#global-search').addEventListener('input',e=>{search=e.target.value;if(view!=='tasks')filter='active';view='tasks';render();});
 document.addEventListener('keydown',e=>{const editing=/INPUT|TEXTAREA|SELECT/.test(e.target.tagName);if(e.key==='Escape'){closeDrawer();closeSidebar();}if(e.key==='/'&&!editing){e.preventDefault();$('#global-search').focus();}if(e.key==='Enter'&&e.target.matches('[data-task],[data-project]')){e.preventDefault();e.target.click();}});
 document.addEventListener('dragstart',e=>{const card=e.target.closest('[draggable]');if(card)e.dataTransfer.setData('text/plain',card.dataset.task);});
 document.addEventListener('dragover',e=>{if(e.target.closest('[data-drop]'))e.preventDefault();});
