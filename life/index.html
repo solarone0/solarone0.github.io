@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f5f6f8" />
-    <meta name="referrer" content="no-referrer" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta name="description" content="프로젝트, 할 일, 습관을 한곳에서 관리하는 개인 워크스페이스" />
     <title>나의 하루</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 rx=%2218%22 fill=%22%233182f6%22/><path d=%22m18 33 9 9 19-21%22 fill=%22none%22 stroke=%22white%22 stroke-width=%227%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/></svg>" />
@@ -98,6 +98,23 @@
       <button data-view="goals"><svg><use href="#i-check"></use></svg><span>목표</span></button>
       <button data-view="habits"><svg><use href="#i-spark"></use></svg><span>습관</span></button>
     </nav>
+
+    <dialog class="modal" id="google-modal">
+      <form id="google-auth-form">
+        <div class="modal-head"><div><span class="eyebrow">일정 연동</span><h2>구글 캘린더 연결</h2></div><button type="button" class="icon-button modal-close" aria-label="닫기"><svg><use href="#i-x"></use></svg></button></div>
+        <p class="google-help">구글 계정으로 로그인하고, Life에 표시할 캘린더를 선택해.</p>
+        <label class="field"><span>구글 OAuth 클라이언트 ID</span><input id="google-client-id" required autocomplete="off" placeholder="…apps.googleusercontent.com" spellcheck="false" /></label>
+        <details class="google-setup"><summary>처음 연결하는 방법</summary><ol>
+          <li><a href="https://console.cloud.google.com/apis/library/calendar-json.googleapis.com" target="_blank" rel="noopener noreferrer">Google Cloud</a>에서 프로젝트를 만들거나 선택하고 Google Calendar API를 사용 설정해.</li>
+          <li>Google Auth Platform에서 앱 이름과 이메일을 설정하고, 외부·테스트 모드라면 테스트 사용자에 네 구글 계정을 추가해.</li>
+          <li>클라이언트에서 <strong>웹 애플리케이션</strong> OAuth 클라이언트를 만들고, 승인된 자바스크립트 원본에 <code id="google-origin"></code>을 추가해. 주소 뒤 경로는 빼줘.</li>
+          <li>발급받은 클라이언트 ID를 위에 입력해. 클라이언트 보안 비밀과 API 키는 필요 없어.</li>
+        </ol><a href="https://developers.google.com/identity/oauth2/web/guides/get-google-api-clientid" target="_blank" rel="noopener noreferrer">구글 공식 설정 안내</a></details>
+        <p class="google-help">구글 로그인 정보는 이 페이지를 여는 동안만 유지돼. 새로고침하거나 연결이 만료되면 다시 로그인해줘.</p>
+        <p id="google-auth-error" class="auth-error" role="alert"></p>
+        <div class="modal-actions"><button type="button" class="button button-ghost modal-close">닫기</button><button id="google-connect" class="button button-primary" type="submit">구글 계정 연결</button></div>
+      </form>
+    </dialog>
 
     <dialog class="modal" id="web-auth-modal">
       <form id="web-auth-form">
@@ -203,6 +220,7 @@
     <script src="web-sync.js" defer></script>
     <script src="workspace-ui.js" defer></script>
     <script src="habit-tracker.js" defer></script>
+    <script src="google-calendar.js" defer></script>
     <script src="app.js" defer></script>
   </body>
 </html>

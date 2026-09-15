@@ -599,6 +599,31 @@ th[aria-sort="ascending"] .column-sort,th[aria-sort="descending"] .column-sort {
 .habit-frequency { color:var(--green); font-size:14px; text-align:center; }
 .habit-frequency small { display:block; font-size:9px; color:var(--muted); margin-top:6px; }
 .tracker-habit-row>.button { min-height:34px; padding:7px; font-size:11px; }
+.google-panel { padding:24px; margin-bottom:24px; }
+.google-panel-head,.google-export { display:flex; gap:16px; justify-content:space-between; align-items:center; }
+.google-panel h2 { display:flex; align-items:center; gap:9px; margin:0; font-size:16px; }
+.google-panel p { margin:7px 0 0; font-size:12px; line-height:1.6; color:var(--muted); overflow-wrap:anywhere; }
+.google-dot,.calendar-legend i.google-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#188038; }
+.google-actions { display:flex; gap:8px; flex-shrink:0; }
+.google-calendar-list { display:flex; flex-wrap:wrap; gap:10px 20px; margin-top:20px; }
+.google-calendar-list label { display:flex; align-items:center; gap:7px; font-size:12px; overflow-wrap:anywhere; max-width:100%; }
+.google-calendar-list input { accent-color:#188038; }
+.google-export { border-top:1px solid var(--line); margin-top:18px; padding-top:18px; flex-wrap:wrap; }
+.google-export>div { flex:1 1 240px; }
+.google-export strong { font-size:13px; }
+.google-panel .google-status { margin-top:16px; color:var(--ink-2); }
+.calendar-event.event-google { display:block; background:#e9f5ec; color:#186b32; text-decoration:none; --event-color:#188038; }
+.event-google span { font-size:10px; opacity:.85; }
+.google-day-events { margin:20px 0; }
+.google-day-events h3 { margin-bottom:10px; font-size:13px; }
+.google-day-events .event-google { padding:10px 12px; margin-top:6px; white-space:normal; overflow-wrap:anywhere; }
+.google-help,.google-setup { font-size:12px; line-height:1.8; color:var(--muted); margin:12px 0 20px; }
+.google-setup summary { cursor:pointer; color:var(--ink-2); }
+.google-setup ol { padding-left:20px; }
+.google-setup li { margin:10px 0; }
+.google-setup code { overflow-wrap:anywhere; color:var(--ink-2); }
+.google-setup a { color:#1b64da; }
+@media(max-width:760px) { .google-panel { padding:18px; } .google-panel-head { align-items:flex-start; flex-wrap:wrap; } .google-actions { flex-wrap:wrap; } .google-export>div { flex-basis:100%; } }
 @media(max-width:1100px) { .tracker-habit-row { grid-template-columns:minmax(120px,1fr) 220px 90px; gap:12px; } .tracker-habit-row>.button { grid-column:3; } }
 @media(max-width:760px) {
   .workspace-table th:first-child,.workspace-table td:first-child { width:265px; }

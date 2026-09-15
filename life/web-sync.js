@@ -62,6 +62,7 @@ function disconnectWeb(){
   if(webBusy){toast('저장이 끝난 뒤 연결을 해제해줘.');return;}
   if(webMeta.pending&&!confirm('아직 깃허브에 저장되지 않은 변경이 있어. 백업한 뒤 연결을 해제할까?'))return;
   if(webMeta.pending)exportData();
+  lifeGoogle.disconnect(false);
   clearTimeout(webTimer);webCredential='';token='';webReady=false;sessionStorage.removeItem(webStorageKey);localStorage.removeItem(key);localStorage.removeItem(webMetaKey);webMeta={sha:null,pending:false};state=empty();render();
 }
 window.addEventListener('online',()=>{if(webHosted&&webMeta.pending)webSyncAction();});

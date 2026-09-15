@@ -42,6 +42,7 @@ function validate(s) {
   return s;
 }
 function persist() {
+  lifeGoogle.queue();
   state.updatedAt=new Date().toISOString();
   if(localServer)syncInfo={...syncInfo,state:'pending',message:'변경 내용 저장 중'};
   const body=JSON.stringify(state);
@@ -84,6 +85,7 @@ function render() {
   $('#github-subtitle').textContent=github.repo?'이슈 가져오기 · 연결 설정':'이슈와 할 일 연결';
   $('#today-label').textContent=new Intl.DateTimeFormat('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'long'}).format(new Date());
   if(view==='habits')requestAnimationFrame(scrollGardenToDate);
+  if(view==='calendar')queueMicrotask(()=>lifeGoogle.ensure());
   const syncButton=$('#sync-now');if(syncButton)syncButton.textContent=(localServer||webHosted)?syncInfo.message:'이 브라우저에 저장';
   if(webHosted)$('#view-root .data-footer>div').insertAdjacentHTML('beforeend','<button id="web-disconnect">연결 해제</button>');
 }
@@ -172,9 +174,9 @@ function renderGoals(){
 }
 function renderTodayGoals(){const goals=goalsOn(today());return `<section class="surface project-strip"><div class="section-head"><div><h2>지금의 목표</h2><p>오늘에 해당하는 월간·주간·일간 목표</p></div><button class="text-button" data-view="goals">목표 관리 ${icon('chevron')}</button></div><div class="goals-grid">${goals.map(g=>goalCard(g,true)).join('')||'<p class="goal-context">아직 설정한 목표가 없어. 목표 메뉴에서 추가해봐.</p>'}</div></section>`;}
 function calendarEvents(day){
-  return state.tasks.filter(t=>t.due===day).map(t=>({id:t.id,title:t.title,kind:'task',done:complete(t),color:projectOf(t).color})).concat(state.goals.filter(g=>periodBounds(g.period,g.start).end===day).map(g=>({id:g.id,title:g.title,kind:'goal',done:g.current>=g.target,color:'#7867e6'})));
+  return state.tasks.filter(t=>t.due===day).map(t=>({id:t.id,title:t.title,kind:'task',done:complete(t),color:projectOf(t).color})).concat(state.goals.filter(g=>periodBounds(g.period,g.start).end===day).map(g=>({id:g.id,title:g.title,kind:'goal',done:g.current>=g.target,color:'#7867e6'})),lifeGoogle.visible(day).map(e=>({...e,kind:'google'})));
 }
-function eventButton(ev){return `<button class="calendar-event ${ev.done?'event-done':''} ${ev.kind==='goal'?'event-goal':''}" style="--event-color:${ev.color}" data-${ev.kind==='task'?'task':'goal-edit'}="${esc(ev.id)}" title="${esc(ev.title)}">${ev.kind==='goal'?'목표 · ':''}${esc(ev.title)}</button>`;}
+function eventButton(ev){if(ev.kind==='google')return lifeGoogle.eventButton(ev);return `<button class="calendar-event ${ev.done?'event-done':''} ${ev.kind==='goal'?'event-goal':''}" style="--event-color:${ev.color}" data-${ev.kind==='task'?'task':'goal-edit'}="${esc(ev.id)}" title="${esc(ev.title)}">${ev.kind==='goal'?'목표 · ':''}${esc(ev.title)}</button>`;}
 function renderCalendar(){
   const b=periodBounds(calendarLayout,calendarDate);let days;
   if(calendarLayout==='month'){const first=periodBounds('week',b.start).start;days=Array.from({length:42},(_,i)=>offset(first,i));}
@@ -183,7 +185,7 @@ function renderCalendar(){
   const dated=state.tasks.filter(t=>t.due===calendarDate),goals=goalsOn(calendarDate),undated=state.tasks.filter(t=>!t.due&&!complete(t));
   const grid=calendarLayout==='month'?`<div class="surface calendar-month"><div class="calendar-weekdays">${[...'월화수목금토일'].map(n=>`<span>${n}</span>`).join('')}</div><div class="calendar-grid">${days.map(day=>{const events=calendarEvents(day);return `<div class="calendar-cell ${day.slice(0,7)!==calendarDate.slice(0,7)?'outside':''} ${day===calendarDate?'selected':''} ${day===today()?'is-today':''}"><button class="calendar-day" data-calendar-day="${day}" aria-label="${day} 일정 ${events.length}개" aria-pressed="${day===calendarDate}">${Number(day.slice(-2))}</button><div class="calendar-cell-events">${events.slice(0,3).map(eventButton).join('')}${events.length>3?`<button class="calendar-more" data-calendar-day="${day}">+${events.length-3}개 더 보기</button>`:''}</div></div>`;}).join('')}</div></div>`:
     `<div class="calendar-agenda ${calendarLayout==='week'?'week-agenda':''}">${days.map(day=>`<section class="surface agenda-day ${day===today()?'is-today':''}"><button class="agenda-date" data-calendar-day="${day}">${day.slice(5).replace('-','.')} <span>${'일월화수목금토'[new Date(day+'T12:00:00').getDay()]}</span></button><div class="agenda-events">${calendarEvents(day).map(eventButton).join('')||'<p class="goal-context">일정 없음</p>'}</div><button class="text-button" data-calendar-add="${day}">${icon('plus')} 할 일</button></section>`).join('')}</div>`;
-  return head('일정','일정을 한눈에','할 일의 마감일과 목표 기간의 마지막 날을 표시해.','<button class="button button-primary" id="calendar-quick-add">'+icon('plus')+'할 일 추가</button>')+periodToolbar('calendar',calendarLayout,calendarDate)+`<div class="section-head"><h2>${rangeLabel(calendarLayout,calendarDate)}</h2><span class="calendar-legend"><i></i>할 일 <i class="goal-legend"></i>목표</span></div>`+grid+`<section class="surface project-strip selected-day"><div class="section-head"><div><h2>${calendarDate} 일정</h2><p>할 일 ${dated.length}개 · 진행 기간에 해당하는 목표 ${goals.length}개</p></div><button class="text-button" data-calendar-goal="${calendarDate}">일간 목표 추가 ${icon('plus')}</button></div><div class="focus-list">${dated.map(taskRow).join('')||'<p class="goal-context">이날 마감인 할 일은 없어.</p>'}</div>${goals.length?`<div class="goals-grid">${goals.map(g=>goalCard(g,true)).join('')}</div>`:''}</section>${undated.length?`<section class="surface project-strip"><div class="section-head"><div><h2>날짜를 정하지 않은 할 일</h2><p>상세 화면에서 마감일을 정하면 캘린더에 표시돼.</p></div></div>${undated.map(taskRow).join('')}</section>`:''}`;
+  return head('일정','일정을 한눈에','할 일, 목표와 구글 일정을 함께 확인해.','<button class="button button-primary" id="calendar-quick-add">'+icon('plus')+'할 일 추가</button>')+lifeGoogle.panel()+periodToolbar('calendar',calendarLayout,calendarDate)+`<div class="section-head"><h2>${rangeLabel(calendarLayout,calendarDate)}</h2><span class="calendar-legend"><i></i>할 일 <i class="goal-legend"></i>목표 <i class="google-dot"></i>구글</span></div>`+grid+`<section class="surface project-strip selected-day"><div class="section-head"><div><h2>${calendarDate} 일정</h2><p>할 일 ${dated.length}개 · 진행 기간에 해당하는 목표 ${goals.length}개</p></div><button class="text-button" data-calendar-goal="${calendarDate}">일간 목표 추가 ${icon('plus')}</button></div><div class="focus-list">${dated.map(taskRow).join('')||'<p class="goal-context">이날 마감인 할 일은 없어.</p>'}</div>${lifeGoogle.dayList(calendarDate)}${goals.length?`<div class="goals-grid">${goals.map(g=>goalCard(g,true)).join('')}</div>`:''}</section>${undated.length?`<section class="surface project-strip"><div class="section-head"><div><h2>날짜를 정하지 않은 할 일</h2><p>상세 화면에서 마감일을 정하면 캘린더에 표시돼.</p></div></div>${undated.map(taskRow).join('')}</section>`:''}`;
 }
 function updateGoalRange(){const f=$('#goal-form'),day=f.elements.date.value;$('#goal-period-label').textContent=validDate(day)?'목표 기간: '+rangeLabel(f.elements.period.value,day):'기준 날짜를 선택해줘.';}
 function openGoal(id='',progressOnly=false){
