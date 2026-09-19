@@ -51,8 +51,8 @@
 
         <nav class="main-nav" aria-label="주요 메뉴">
           <button class="nav-item active" data-view="today"><svg><use href="#i-home"></use></svg><span>오늘</span><b id="nav-today-count">0</b></button>
-          <button class="nav-item" data-view="projects"><svg><use href="#i-folder"></use></svg><span>프로젝트</span><b id="nav-project-count">0</b></button>
-          <button class="nav-item" data-view="tasks"><svg><use href="#i-list"></use></svg><span>전체 할 일</span><b id="nav-task-count">0</b></button>
+          <button class="nav-item" data-view="projects"><svg><use href="#i-folder"></use></svg><span>핵심 결과</span><b id="nav-project-count">0</b></button>
+          <button class="nav-item" data-view="tasks"><svg><use href="#i-list"></use></svg><span>전체 일감</span><b id="nav-task-count">0</b></button>
           <button class="nav-item" data-view="calendar"><svg><use href="#i-calendar"></use></svg><span>캘린더</span></button>
           <button class="nav-item" data-view="goals"><svg><use href="#i-check"></use></svg><span>목표</span></button>
           <button class="nav-item" data-view="habits"><svg><use href="#i-spark"></use></svg><span>습관 트래커</span><b id="nav-habit-count">0</b></button>
@@ -92,8 +92,8 @@
 
     <nav class="mobile-nav" aria-label="모바일 메뉴">
       <button class="active" data-view="today"><svg><use href="#i-home"></use></svg><span>오늘</span></button>
-      <button data-view="projects"><svg><use href="#i-folder"></use></svg><span>프로젝트</span></button>
-      <button data-view="tasks"><svg><use href="#i-list"></use></svg><span>할 일</span></button>
+      <button data-view="projects"><svg><use href="#i-folder"></use></svg><span>핵심 결과</span></button>
+      <button data-view="tasks"><svg><use href="#i-list"></use></svg><span>일감</span></button>
       <button data-view="calendar"><svg><use href="#i-calendar"></use></svg><span>캘린더</span></button>
       <button data-view="goals"><svg><use href="#i-check"></use></svg><span>목표</span></button>
       <button data-view="habits"><svg><use href="#i-spark"></use></svg><span>습관</span></button>
@@ -118,26 +118,26 @@
 
     <dialog class="modal" id="web-auth-modal">
       <form id="web-auth-form">
-        <div class="modal-head"><div><span class="eyebrow">나의 기록</span><h2>깃허브에 연결하기</h2></div><button type="button" class="icon-button modal-close" aria-label="닫기"><svg><use href="#i-x"></use></svg></button></div>
+        <div class="modal-head"><div><span class="eyebrow">이전 기록</span><h2>GitHub에서 기록 가져오기</h2></div><button type="button" class="icon-button modal-close" aria-label="닫기"><svg><use href="#i-x"></use></svg></button></div>
         <p class="modal-copy">비공개 저장소의 기록을 불러와. 연결하면 할 일·목표·습관이 자동으로 저장돼.</p>
         <label class="field"><span>접근 토큰</span><input type="password" name="accessToken" required autocomplete="off" placeholder="발급받은 접근 토큰을 붙여넣어줘" /></label>
         <div class="security-note"><span>토큰은 이 탭에서만 보관해. 새로고침해도 연결은 유지되고, 연결 해제 시 삭제돼. 탭을 닫았다가 다시 열면 연결이 필요할 수 있어.</span></div>
-        <details class="auth-help"><summary>접근 토큰 만드는 방법</summary><p>깃허브에서 세부 권한 토큰을 만들고, 저장소는 <strong>life</strong>만 선택해. 저장소 내용의 읽기·쓰기 권한을 허용하면 돼. 이슈를 사용하려면 이슈 읽기·쓰기 권한도 추가해.</p><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">토큰 발급 화면 열기 ↗</a></details>
+        <details class="auth-help"><summary>접근 토큰 만드는 방법</summary><p>깃허브에서 세부 권한 토큰을 만들고, 비공개 <strong>life</strong> 저장소의 내용 읽기 권한을 줘. 가져온 기록은 구글 드라이브 앱 데이터에 저장해.</p><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">토큰 발급 화면 열기 ↗</a></details>
         <p id="web-auth-error" class="auth-error" role="alert"></p>
-        <div class="modal-actions"><button type="submit" class="button button-primary">연결하고 기록 불러오기</button></div>
+        <div class="modal-actions"><button type="submit" class="button button-primary">가져와서 구글에 저장</button></div>
       </form>
     </dialog>
 
     <dialog class="modal" id="task-modal">
       <form id="task-form" method="dialog">
         <div class="modal-head">
-          <div><span class="eyebrow">새 할 일</span><h2>새 할 일</h2></div>
+          <div><span class="eyebrow">새 일감</span><h2>새 일감</h2></div>
           <button type="button" class="icon-button modal-close" aria-label="닫기"><svg><use href="#i-x"></use></svg></button>
         </div>
-        <label class="field field-wide"><span>할 일</span><input name="title" required maxlength="100" placeholder="해야 할 일을 적어줘" autofocus /></label>
+        <label class="field field-wide"><span>일감</span><input name="title" required maxlength="100" placeholder="해야 할 일을 적어줘" autofocus /></label>
         <label class="field"><span>상위 일감</span><select name="parentId" id="task-parent"><option value="">없음</option></select></label>
         <div class="field-grid">
-          <label class="field"><span>프로젝트</span><select name="project" id="task-project-select"></select></label>
+          <label class="field"><span>핵심 결과</span><select name="project" id="task-project-select"></select></label>
           <label class="field"><span>유형</span><input name="type" list="workspace-types" maxlength="40" value="일반" /></label>
           <label class="field"><span>우선순위</span><select name="priority"><option value="High">높음</option><option value="Medium" selected>보통</option><option value="Low">낮음</option></select></label>
           <label class="field"><span>상태</span><select name="status"><option value="Not Started">시작 전</option><option value="In Progress">진행 중</option><option value="Blocked">막힘</option><option value="Done">완료</option></select></label>
@@ -179,7 +179,6 @@
           <label class="field"><span>목표량</span><input name="target" type="number" min="0.01" step="any" value="1" required /></label>
           <label class="field"><span>단위</span><input name="unit" maxlength="16" placeholder="회, 권, 시간" value="회" required /></label>
           <label class="field"><span>현재 달성량</span><input name="current" type="number" min="0" step="any" value="0" required /></label>
-          <label class="field"><span>프로젝트</span><select name="project" id="goal-project"></select></label>
         </div>
         <label class="field"><span>메모</span><textarea name="notes" rows="2" placeholder="목표를 이루기 위한 계획"></textarea></label>
         <div class="modal-actions split"><button type="button" class="button button-danger" id="delete-goal" hidden>삭제</button><button class="button button-primary" type="submit">목표 저장</button></div>
@@ -189,9 +188,10 @@
     <datalist id="workspace-types"><option value="일반"><option value="업무"><option value="개인"><option value="학습"><option value="생활"></datalist>
     <dialog class="modal" id="project-modal">
       <form id="project-form">
-        <div class="modal-head"><h2 id="project-modal-title">프로젝트 추가</h2><button type="button" class="icon-button modal-close" aria-label="닫기"><svg><use href="#i-x"></use></svg></button></div>
+        <div class="modal-head"><h2 id="project-modal-title">핵심 결과 추가</h2><button type="button" class="icon-button modal-close" aria-label="닫기"><svg><use href="#i-x"></use></svg></button></div>
         <input type="hidden" name="id" />
-        <label class="field"><span>프로젝트 이름</span><input name="name" required maxlength="100" placeholder="어떤 일을 시작할까?" autofocus /></label>
+        <label class="field"><span>핵심 결과</span><input name="name" required maxlength="100" placeholder="무엇을 달성할까?" autofocus /></label>
+        <label class="field"><span>상위 목표</span><select name="goalId" required></select></label>
         <div class="field-grid"><label class="field"><span>유형</span><input name="type" list="workspace-types" value="일반" maxlength="40" /></label><label class="field"><span>우선순위</span><select name="priority"><option value="High">높음</option><option value="Medium" selected>보통</option><option value="Low">낮음</option></select></label></div>
         <label class="field"><span>메모</span><textarea name="notes" rows="3" placeholder="목표 또는 다음 단계"></textarea></label>
         <div class="modal-actions"><button type="button" class="button button-ghost modal-close">취소</button><button class="button button-primary" type="submit">저장하기</button></div>
@@ -218,6 +218,7 @@
 
     <div class="toast-region" id="toast-region" aria-live="polite"></div>
     <script src="web-sync.js" defer></script>
+    <script src="drive-sync.js" defer></script>
     <script src="workspace-ui.js" defer></script>
     <script src="habit-tracker.js" defer></script>
     <script src="google-calendar.js" defer></script>

@@ -623,6 +623,22 @@ th[aria-sort="ascending"] .column-sort,th[aria-sort="descending"] .column-sort {
 .google-setup li { margin:10px 0; }
 .google-setup code { overflow-wrap:anywhere; color:var(--ink-2); }
 .google-setup a { color:#1b64da; }
+.goal-hierarchy { border-top:1px solid var(--line); margin-top:17px; padding-top:14px; }
+.goal-hierarchy-head,.goal-result>div:first-child,.unlinked-result { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+.goal-hierarchy-head strong { font-size:12px; }
+.goal-result { border-top:1px solid var(--line); padding:11px 0; }
+.goal-result-name { padding:0; border:0; background:transparent; color:var(--ink-2); font:inherit; font-weight:700; cursor:pointer; text-align:left; }
+.goal-result span,.goal-result p,.unlinked-result span { color:var(--muted); font-size:11px; }
+.goal-result-tasks { display:flex; flex-wrap:wrap; gap:6px; margin-top:9px; }
+.goal-result-task { border:1px solid var(--line); border-radius:8px; background:#f7f8fa; color:var(--ink-2); padding:6px 9px; cursor:pointer; font-size:11px; text-align:left; }
+.goal-result-task.done { color:var(--muted); text-decoration:line-through; }
+.unlinked-result { border-top:1px solid var(--line); padding:11px 0; font-size:12px; }
+.google-welcome #drive-login-form { display:grid; gap:14px; max-width:420px; margin:25px auto; text-align:left; }
+.google-welcome #drive-login-form .button { width:100%; }
+.google-welcome .auth-help { max-width:440px; margin:20px auto; text-align:left; }
+.legacy-import { display:flex; justify-content:space-between; align-items:center; gap:18px; padding:18px 22px; margin-bottom:24px; flex-wrap:wrap; }
+.legacy-import strong { font-size:13px; }
+.legacy-import p { color:var(--muted); font-size:12px; margin:5px 0 0; }
 @media(max-width:760px) { .google-panel { padding:18px; } .google-panel-head { align-items:flex-start; flex-wrap:wrap; } .google-actions { flex-wrap:wrap; } .google-export>div { flex-basis:100%; } }
 @media(max-width:1100px) { .tracker-habit-row { grid-template-columns:minmax(120px,1fr) 220px 90px; gap:12px; } .tracker-habit-row>.button { grid-column:3; } }
 @media(max-width:760px) {

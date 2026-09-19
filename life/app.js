@@ -36,6 +36,11 @@ function validate(s) {
   s.goals ??= [];
   if(!Array.isArray(s.goals)||s.goals.length>10000||new Set(s.goals.map(g=>g.id)).size!==s.goals.length)throw Error('목표 데이터 형식이 올바르지 않아.');
   for(const g of s.goals)if(!g||typeof g.id!=='string'||typeof g.title!=='string'||!['month','week','day'].includes(g.period)||!validDate(g.start)||!Number.isFinite(g.target)||g.target<=0||!Number.isFinite(g.current)||g.current<0||typeof g.unit!=='string')throw Error('목표의 날짜나 달성량이 올바르지 않아.');
+  // Old goals pointed at a project. Keep that relationship while moving the parent link onto the key result.
+  for(const p of s.projects){
+    if(p.goalId==null){p.goalId=s.goals.find(g=>g.project===p.id)?.id||'';}
+    if(typeof p.goalId!=='string'||(p.goalId&&!s.goals.some(g=>g.id===p.goalId)))p.goalId='';
+  }
   if(s.github?.owner==='solarone0'&&s.github.repo==='life-workspace')s.github.repo='life';
   for(const t of s.tasks)if(t.github?.owner==='solarone0'&&t.github.repo==='life-workspace')t.github.repo='life';
   for(const t of s.tasks){t.parentId ||= '';let node=t,depth=0;const seen=new Set([t.id]);while(node.parentId){node=s.tasks.find(p=>p.id===node.parentId);if(!node||seen.has(node.id)||++depth>5)throw Error('상위·하위 일감 연결을 확인해줘.');seen.add(node.id);}}
@@ -47,7 +52,7 @@ function persist() {
   if(localServer)syncInfo={...syncInfo,state:'pending',message:'변경 내용 저장 중'};
   const body=JSON.stringify(state);
   try { localStorage.setItem(key,body); } catch { toast('브라우저 저장 공간이 부족해. 백업을 내려받아줘.',true); }
-  if(webHosted){queueWebSave();return;}
+  if(webHosted){lifeDrive.queue();return;}
   if(localServer) saving=saving.catch(()=>{}).then(async()=>{const r=await fetch('/api/state',{method:'PUT',headers:{'Content-Type':'application/json'},body,keepalive:new Blob([body]).size<60000}); if(!r.ok)throw Error('로컬 파일 저장 실패');}).catch(e=>toast(e.message,true));
 }
 function statusPill(t) { return `<span class="status-pill status-${t.status.replaceAll(' ','-')}">${statusNames[statuses.indexOf(t.status)]}</span>`; }
@@ -58,7 +63,8 @@ function head(eyebrow,title,description,tools='') { return `<div class="page-hea
 function emptyView(title,copy,button='') { return `<div class="empty-state"><div class="empty-icon">${icon('check')}</div><h3>${esc(title)}</h3><p>${esc(copy)}</p>${button}</div>`; }
 function projectCard(p,large=false) {
   const tasks=state.tasks.filter(t=>t.project===p.id), done=tasks.filter(complete).length, progress=tasks.length?Math.round(done/tasks.length*100):0;
-  return `<article class="${large?'surface project-overview-card':'project-card'}" style="--project-color:${p.color}" data-project="${esc(p.id)}" data-letter="${esc(p.name[0])}" role="button" tabindex="0"><div class="project-card-top"><span class="project-icon">${esc(p.name[0])}</span><span class="due-pill">${tasks.length?'할 일 '+tasks.length+'개':'아이디어'}</span></div><${large?'h2':'h3'}>${esc(p.name)}</${large?'h2':'h3'}><p>${esc(p.notes || (tasks.length?`${done}개 완료 · ${tasks.length-done}개 남음`:'첫 할 일을 추가해봐'))}</p><div class="progress-track"><i style="width:${progress}%"></i></div><div class="project-progress-label"><span>${done} / ${tasks.length} 완료</span><strong>${progress}%</strong></div></article>`;
+  const goal=state.goals.find(g=>g.id===p.goalId);
+  return `<article class="${large?'surface project-overview-card':'project-card'}" style="--project-color:${p.color}" data-project="${esc(p.id)}" data-letter="${esc(p.name[0])}" role="button" tabindex="0"><div class="project-card-top"><span class="project-icon">${esc(p.name[0])}</span><span class="due-pill">${tasks.length?'일감 '+tasks.length+'개':'일감 없음'}</span></div><${large?'h2':'h3'}>${esc(p.name)}</${large?'h2':'h3'}><p class="goal-context">${esc(goal?'목표 · '+goal.title:'연결할 목표를 선택해줘')}</p><p>${esc(p.notes || (tasks.length?`${done}개 완료 · ${tasks.length-done}개 남음`:'첫 일감을 추가해봐'))}</p><div class="progress-track"><i style="width:${progress}%"></i></div><div class="project-progress-label"><span>${done} / ${tasks.length} 완료</span><strong>${progress}%</strong></div></article>`;
 }
 function renderToday() {
   const active=state.tasks.filter(t=>!complete(t)), done=state.tasks.filter(complete).length, progress=state.tasks.length?Math.round(done/state.tasks.length*100):0;
@@ -72,10 +78,11 @@ function renderHabits() {
   return head('습관','작은 습관이 만드는 변화','날짜를 누르면 완료를 기록해. 미래 날짜는 기록할 수 없어.','<button class="button button-ghost" id="add-habit">'+icon('plus')+'습관 추가</button>')+`<div class="habit-summary"><section class="surface habit-week-card"><div class="section-head"><div><h2>이번 주 기록</h2><p>${days[0]} — ${days[6]}</p></div></div><div class="week-progress">${days.map((d,i)=>`<div class="day-cell ${d===today()?'today':''}"><span>${'월화수목금토일'[i]}</span><b>${Number(d.slice(-2))}</b></div>`).join('')}</div></section><section class="surface habit-score"><div><span class="score">${checked}<small> / ${state.habits.length}</small></span><p>오늘 완료한 습관</p></div></section></div><section class="surface habit-list">${state.habits.map(h=>`<div class="habit-row"><div class="habit-name"><strong>${esc(h.name)}</strong><small>${esc(h.goal)}</small></div><span class="category-pill">${esc(h.category)}</span><div class="habit-dots">${days.map(d=>`<button class="habit-dot ${(h.entries[d]||0)===100?'checked':''}" data-habit="${esc(h.id)}" data-day="${d}" ${d>today()?'disabled':''} aria-label="${esc(h.name)} ${d}" aria-pressed="${(h.entries[d]||0)===100}" title="${d} · ${h.entries[d]||0}%">${(h.entries[d]||0)>0&&(h.entries[d]||0)<100?esc(h.entries[d])+'%':icon('check')}</button>`).join('')}</div><span class="streak">주 ${days.filter(d=>(h.entries[d]||0)===100).length}회</span></div>`).join('')}</section>`;
 }
 function render() {
-  $('#core-value').textContent=webHosted&&!webCredential?'나에게 중요한 일부터':state.coreValue||'나에게 중요한 일부터';
-  if(webHosted&&!webCredential){$('#view-root').innerHTML=webGate();$('#quick-add').disabled=true;$('#global-search').disabled=true;for(const id of ['nav-today-count','nav-task-count','nav-project-count','nav-habit-count'])$('#'+id).textContent='';return;}
+  $('#core-value').textContent=webHosted&&!lifeDrive.ready()?'나에게 중요한 일부터':state.coreValue||'나에게 중요한 일부터';
+  if(webHosted&&!lifeDrive.ready()){$('#view-root').innerHTML=lifeDrive.gate();$('#quick-add').disabled=true;$('#global-search').disabled=true;for(const id of ['nav-today-count','nav-task-count','nav-project-count','nav-habit-count'])$('#'+id).textContent='';queueMicrotask(()=>lifeDrive.preload());return;}
   $('#quick-add').disabled=false;$('#global-search').disabled=false;
-  $('#view-root').innerHTML=(view==='today'?renderToday()+renderTodayGoals():view==='projects'?renderProjects():view==='habits'?renderHabitGarden():view==='calendar'?renderCalendar():view==='goals'?renderGoals():renderTasks())+`<footer class="data-footer"><button class="sync-status" id="sync-now">${localServer?'저장 상태 확인 중':'이 브라우저에 저장'}</button><div><button id="export-data">백업 내보내기</button><button id="import-data">백업 가져오기</button></div></footer>`;
+  $('#view-root').innerHTML=(view==='today'?renderToday()+renderTodayGoals():view==='projects'?renderProjects():view==='habits'?renderHabitGarden():view==='calendar'?renderCalendar():view==='goals'?renderGoals():renderTasks())+`<footer class="data-footer"><button class="sync-status" id="sync-now">${webHosted?'구글 드라이브 저장 상태 확인 중':localServer?'저장 상태 확인 중':'이 브라우저에 저장'}</button><div><button id="export-data">백업 내보내기</button><button id="import-data">백업 가져오기</button></div></footer>`;
+  if(webHosted&&view==='today')$('#view-root').insertAdjacentHTML('afterbegin',lifeDrive.migrationPanel());
   $$('[data-view]').forEach(n=>n.classList.toggle('active',n.dataset.view===view));
   $('#nav-today-count').textContent=state.tasks.filter(t=>!complete(t)&&t.due&&delta(t.due)<=0).length;
   $('#nav-task-count').textContent=state.tasks.filter(t=>!complete(t)).length;
@@ -87,10 +94,10 @@ function render() {
   if(view==='habits')requestAnimationFrame(scrollGardenToDate);
   if(view==='calendar')queueMicrotask(()=>lifeGoogle.ensure());
   const syncButton=$('#sync-now');if(syncButton)syncButton.textContent=(localServer||webHosted)?syncInfo.message:'이 브라우저에 저장';
-  if(webHosted)$('#view-root .data-footer>div').insertAdjacentHTML('beforeend','<button id="web-disconnect">연결 해제</button>');
+  if(webHosted)$('#view-root .data-footer>div').insertAdjacentHTML('beforeend','<button id="web-disconnect">구글 로그아웃</button>');
 }
 function navigate(v) { view=v; projectFilter=''; if(v==='tasks'){filter='active';search='';$('#global-search').value='';} closeDrawer(); closeSidebar(); render(); }
-function openTaskForm(parentId='') { $('#task-form').reset(); $('#task-parent').innerHTML='<option value="">없음</option>'+options(state.tasks.filter(t=>taskDepth(t)<5).map(t=>t.id),state.tasks.filter(t=>taskDepth(t)<5).map(t=>t.title),parentId); $('#task-project-select').innerHTML='<option value="">미분류</option>'+options(state.projects.map(p=>p.id),state.projects.map(p=>p.name),taskOf(parentId)?.project||projectFilter); $('#task-modal').showModal(); }
+function openTaskForm(parentId='',keyResultId='') { $('#task-form').reset(); $('#task-parent').innerHTML='<option value="">없음</option>'+options(state.tasks.filter(t=>taskDepth(t)<5).map(t=>t.id),state.tasks.filter(t=>taskDepth(t)<5).map(t=>t.title),parentId); $('#task-project-select').innerHTML='<option value="">미분류</option>'+options(state.projects.map(p=>p.id),state.projects.map(p=>p.name),taskOf(parentId)?.project||keyResultId||projectFilter); $('#task-modal').showModal(); }
 function closeDrawer() { $('#task-drawer').classList.remove('open'); $('#task-drawer').setAttribute('aria-hidden','true'); selectedId=''; }
 function openDrawer(id) {
   const t=taskOf(id); if(!t)return; selectedId=id;
@@ -134,7 +141,7 @@ async function pushIssue() {
     openDrawer(t.id);toast('깃허브에 저장했어.');
   } catch(e){toast(e.message,true);button.disabled=false;}
 }
-function openGitHub(){if(webHosted&&!webCredential){openWebAuth();return;}const f=$('#github-form');f.elements.owner.value=github.owner||'solarone0';f.elements.repo.value=github.repo||'life';f.elements.token.value=token;$('#github-modal').showModal();}
+function openGitHub(){if(webHosted&&!lifeDrive.ready()){toast('구글 로그인을 먼저 해줘.');return;}const f=$('#github-form');f.elements.owner.value=github.owner||'solarone0';f.elements.repo.value=github.repo||'life';f.elements.token.value=token;$('#github-modal').showModal();}
 function exportData(){const url=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=`life-backup-${today()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 async function importData(){const input=document.createElement('input');input.type='file';input.accept='.json';input.onchange=async()=>{try{const file=input.files[0];if(file.size>10000000)throw Error('10MB 이하 백업을 선택해줘.');const next=validate(JSON.parse(await file.text()));if(!confirm(`현재 데이터를 백업하고 프로젝트 ${next.projects.length}개, 할 일 ${next.tasks.length}개로 복원할까?`))return;exportData();state=next;persist();render();toast('백업을 복원했어.');}catch(e){toast(e.message,true);}};input.click();}
 function validDate(day){if(typeof day!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(day))return false;const d=new Date(day+'T12:00:00');return !Number.isNaN(d.getTime())&&iso(d)===day;}
@@ -165,12 +172,15 @@ const periodNames={month:'월간',week:'주간',day:'일간'};
 function goalsOn(day){return state.goals.filter(g=>{const b=periodBounds(g.period,g.start);return b.start<=day&&day<=b.end;});}
 function goalCard(g,compact=false){
   const pct=Math.min(100,Math.round(g.current/g.target*100)),done=g.current>=g.target;
-  return `<article class="goal-card ${compact?'compact':''} ${done?'achieved':''}"><div class="goal-card-header"><span class="goal-kind">${periodNames[g.period]}</span><button class="text-button" data-goal-edit="${esc(g.id)}" aria-label="${esc(g.title)} 수정">수정 ${icon('chevron')}</button></div><h3>${esc(g.title)}</h3><p class="goal-context">${esc(g.project?projectOf(g).name:rangeLabel(g.period,g.start))}</p><div class="goal-numbers"><strong>${g.current.toLocaleString('ko-KR')}<small> / ${g.target.toLocaleString('ko-KR')} ${esc(g.unit)}</small></strong><span>${pct}%</span></div><div class="progress-track" style="--project-color:${done?'#00a878':'#3182f6'}"><i style="width:${pct}%"></i></div><div class="goal-actions"><span>${done?'목표를 달성했어':periodBounds(g.period,g.start).end<today()?'기간이 끝났어':'차근차근 이어가자'}</span><button class="button button-ghost" data-goal-progress="${esc(g.id)}">달성량 기록</button></div></article>`;
+  const results=state.projects.filter(p=>p.goalId===g.id),tasks=results.flatMap(p=>state.tasks.filter(t=>t.project===p.id));
+  const hierarchy=compact?`<p class="goal-context">핵심 결과 ${results.length}개 · 일감 ${tasks.length}개</p>`:`<div class="goal-hierarchy"><div class="goal-hierarchy-head"><strong>핵심 결과 ${results.length}개</strong><button class="text-button" data-goal-add-result="${esc(g.id)}">+ 핵심 결과</button></div>${results.map(p=>{const own=state.tasks.filter(t=>t.project===p.id),completeCount=own.filter(complete).length;return `<div class="goal-result"><div><button class="goal-result-name" data-project="${esc(p.id)}">${esc(p.name)}</button><span>${completeCount}/${own.length} 일감 완료</span><button class="text-button" data-goal-add-task="${esc(p.id)}">+ 일감</button></div>${own.length?`<div class="goal-result-tasks">${own.slice(0,5).map(t=>`<button data-task="${esc(t.id)}" class="goal-result-task ${complete(t)?'done':''}">${complete(t)?'✓':'○'} ${esc(t.title)}</button>`).join('')}${own.length>5?`<button class="text-button" data-project="${esc(p.id)}">나머지 ${own.length-5}개 보기</button>`:''}</div>`:'<p>연결된 일감이 없어.</p>'}</div>`;}).join('')||'<p class="goal-context">핵심 결과를 추가해 목표를 구체화해봐.</p>'}</div>`;
+  return `<article class="goal-card ${compact?'compact':''} ${done?'achieved':''}"><div class="goal-card-header"><span class="goal-kind">${periodNames[g.period]}</span><button class="text-button" data-goal-edit="${esc(g.id)}" aria-label="${esc(g.title)} 수정">수정 ${icon('chevron')}</button></div><h3>${esc(g.title)}</h3><p class="goal-context">${esc(rangeLabel(g.period,g.start))}</p><div class="goal-numbers"><strong>${g.current.toLocaleString('ko-KR')}<small> / ${g.target.toLocaleString('ko-KR')} ${esc(g.unit)}</small></strong><span>${pct}%</span></div><div class="progress-track" style="--project-color:${done?'#00a878':'#3182f6'}"><i style="width:${pct}%"></i></div><div class="goal-actions"><span>${done?'목표를 달성했어':periodBounds(g.period,g.start).end<today()?'기간이 끝났어':'차근차근 이어가자'}</span><button class="button button-ghost" data-goal-progress="${esc(g.id)}">달성량 기록</button></div>${hierarchy}</article>`;
 }
 function periodToolbar(kind,period,day){return `<div class="period-toolbar"><div class="segmented" role="group" aria-label="${kind==='calendar'?'캘린더 보기':'목표 기간'}">${Object.entries(periodNames).map(([id,label])=>`<button class="${period===id?'active':''}" data-${kind}-period="${id}" aria-pressed="${period===id}">${label}</button>`).join('')}</div><div class="period-controls"><button class="icon-button" data-${kind}-move="-1" aria-label="이전 기간">‹</button><label><span class="sr-only">${kind==='calendar'?'캘린더':'목표'} 기준 날짜</span><input type="date" id="${kind}-date" value="${day}" /></label><button class="icon-button" data-${kind}-move="1" aria-label="다음 기간">›</button><button class="button button-ghost" data-${kind}-today="true">오늘</button></div></div>`;}
 function renderGoals(){
   const b=periodBounds(goalPeriod,goalDate),goals=state.goals.filter(g=>g.period===goalPeriod&&periodBounds(g.period,g.start).start===b.start),achieved=goals.filter(g=>g.current>=g.target).length;
-  return head('목표','이번 기간에 이루고 싶은 것','월간·주간·일간 목표를 정하고, 달성량을 기록해봐.','<button class="button button-primary" id="add-goal">'+icon('plus')+'목표 추가</button>')+periodToolbar('goal',goalPeriod,goalDate)+`<div class="section-head"><div><h2>${rangeLabel(goalPeriod,goalDate)}</h2><p>${goals.length}개 목표 · ${achieved}개 달성</p></div></div><section class="goals-grid">${goals.map(g=>goalCard(g)).join('')||`<div class="surface goals-empty">${emptyView('아직 정한 목표가 없어','작은 목표 하나부터 시작해봐.','<button class="button button-primary" id="empty-add-goal">첫 목표 설정</button>')}</div>`}</section>`;
+  const orphan=state.projects.filter(p=>!p.goalId);
+  return head('목표','목표에서 일감까지','목표 → 핵심 결과 → 일감으로 계획을 연결해.','<button class="button button-primary" id="add-goal">'+icon('plus')+'목표 추가</button>')+periodToolbar('goal',goalPeriod,goalDate)+`<div class="section-head"><div><h2>${rangeLabel(goalPeriod,goalDate)}</h2><p>${goals.length}개 목표 · ${achieved}개 달성</p></div></div><section class="goals-grid">${goals.map(g=>goalCard(g)).join('')||`<div class="surface goals-empty">${emptyView('이 기간의 목표가 없어','작은 목표 하나부터 시작해봐.','<button class="button button-primary" id="empty-add-goal">첫 목표 설정</button>')}</div>`}</section>${orphan.length?`<section class="surface project-strip unlinked-results"><div class="section-head"><div><h2>목표 연결이 필요한 핵심 결과</h2><p>기존 프로젝트와 일감은 그대로 유지했어. 상위 목표를 정해줘.</p></div></div>${orphan.map(p=>`<div class="unlinked-result"><strong>${esc(p.name)}</strong><span>일감 ${state.tasks.filter(t=>t.project===p.id).length}개</span><button class="text-button" data-edit-project="${esc(p.id)}">목표 연결</button></div>`).join('')}</section>`:''}`;
 }
 function renderTodayGoals(){const goals=goalsOn(today());return `<section class="surface project-strip"><div class="section-head"><div><h2>지금의 목표</h2><p>오늘에 해당하는 월간·주간·일간 목표</p></div><button class="text-button" data-view="goals">목표 관리 ${icon('chevron')}</button></div><div class="goals-grid">${goals.map(g=>goalCard(g,true)).join('')||'<p class="goal-context">아직 설정한 목표가 없어. 목표 메뉴에서 추가해봐.</p>'}</div></section>`;}
 function calendarEvents(day){
@@ -191,14 +201,13 @@ function updateGoalRange(){const f=$('#goal-form'),day=f.elements.date.value;$('
 function openGoal(id='',progressOnly=false){
   const g=state.goals.find(g=>g.id===id),f=$('#goal-form');f.reset();
   f.elements.id.value=g?.id||'';f.elements.title.value=g?.title||'';f.elements.period.value=g?.period||goalPeriod;f.elements.date.value=g?.start||goalDate;f.elements.target.value=g?.target??1;f.elements.current.value=g?.current??0;f.elements.unit.value=g?.unit||'회';f.elements.notes.value=g?.notes||'';
-  $('#goal-project').innerHTML='<option value="">연결 없음</option>'+options(state.projects.map(p=>p.id),state.projects.map(p=>p.name),g?.project||'');
   $('#goal-modal-title').textContent=g?(progressOnly?'달성량 기록':'목표 수정'):'목표 추가';$('#delete-goal').hidden=!g;updateGoalRange();$('#goal-modal').showModal();f.elements[progressOnly?'current':'title'].focus();
 }
 $('#goal-form').addEventListener('change',updateGoalRange);
 $('#goal-form').addEventListener('submit',e=>{
   e.preventDefault();const f=new FormData(e.target),day=f.get('date'),period=f.get('period'),title=f.get('title').trim(),unit=f.get('unit').trim(),target=Number(f.get('target')),current=Number(f.get('current'));
   if(!title||!unit||!validDate(day)||!Number.isFinite(target)||target<=0||!Number.isFinite(current)||current<0){toast('목표, 날짜와 달성량을 확인해줘.',true);return;}
-  const goal={id:f.get('id')||crypto.randomUUID(),title,period,start:periodBounds(period,day).start,target,current,unit,project:f.get('project'),notes:f.get('notes'),updatedAt:new Date().toISOString()};
+  const goal={id:f.get('id')||crypto.randomUUID(),title,period,start:periodBounds(period,day).start,target,current,unit,notes:f.get('notes'),updatedAt:new Date().toISOString()};
   const index=state.goals.findIndex(g=>g.id===goal.id);if(index<0)state.goals.push(goal);else state.goals[index]=goal;
   goalPeriod=period;goalDate=day;persist();$('#goal-modal').close();render();toast('목표를 저장했어.');
 });
@@ -206,15 +215,18 @@ document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;const d=b.dataset;
   if(d.addChild){openTaskForm(d.addChild);return;}
   if(b.id==='web-connect'){openWebAuth();return;}
-  if(b.id==='web-disconnect'){disconnectWeb();return;}
-  if(b.id==='sync-now'){if(webHosted){webSyncAction();return;}if(!localServer){toast('이 브라우저에 기록을 저장하고 있어.');return;}fetch('/api/sync',{method:'POST'}).then(refreshSync).catch(()=>toast('연결을 확인해줘.',true));return;}
+  if(b.id==='legacy-import-open'){openWebAuth();return;}
+  if(b.id==='web-disconnect'){lifeDrive.logout();return;}
+  if(b.id==='sync-now'){if(webHosted){lifeDrive.action().catch(e=>toast(e.message,true));return;}if(!localServer){toast('이 브라우저에 기록을 저장하고 있어.');return;}fetch('/api/sync',{method:'POST'}).then(refreshSync).catch(()=>toast('연결을 확인해줘.',true));return;}
   if(d.grassHabit!==undefined){grassHabit=d.grassHabit;render();return;}
   if(d.grassDay){grassDate=d.grassDay;render();return;}
   if(d.grassYear){grassYear+=Number(d.grassYear);grassDate=grassYear===new Date().getFullYear()?today():`${grassYear}-01-01`;render();return;}
   if(d.goalEdit!==undefined)return openGoal(d.goalEdit);
   if(d.goalProgress)return openGoal(d.goalProgress,true);
+  if(d.goalAddResult)return editProject('',d.goalAddResult);
+  if(d.goalAddTask)return openTaskForm('',d.goalAddTask);
   if(['add-goal','empty-add-goal'].includes(b.id))return openGoal();
-  if(b.id==='delete-goal'){const id=$('#goal-form').elements.id.value;if(confirm('이 목표와 달성 기록을 삭제할까?')){state.goals=state.goals.filter(g=>g.id!==id);persist();$('#goal-modal').close();render();}return;}
+  if(b.id==='delete-goal'){const id=$('#goal-form').elements.id.value;if(confirm('이 목표를 삭제할까? 핵심 결과와 일감은 목표 미연결 상태로 유지돼.')){state.goals=state.goals.filter(g=>g.id!==id);for(const p of state.projects)if(p.goalId===id)p.goalId='';persist();$('#goal-modal').close();render();}return;}
   if(d.calendarGoal){goalDate=d.calendarGoal;goalPeriod='day';openGoal();return;}
   if(d.calendarAdd||b.id==='calendar-quick-add'){openTaskForm();$('#task-form').elements.due.value=d.calendarAdd||calendarDate;return;}
   if(d.calendarDay){calendarDate=d.calendarDay;render();return;}
@@ -251,9 +263,9 @@ document.addEventListener('change',e=>{if(e.target.id==='project-filter'){projec
 $('#task-form').addEventListener('submit',e=>{e.preventDefault();const f=new FormData(e.target);const title=f.get('title').trim();if(!title)return;state.tasks.push({id:crypto.randomUUID(),title,type:f.get('type').trim()||'일반',parentId:f.get('parentId')||'',project:f.get('project'),priority:f.get('priority'),status:f.get('status'),due:f.get('due'),notes:f.get('notes'),updatedAt:new Date().toISOString()});persist();$('#task-modal').close();render();if(selectedId)openDrawer(selectedId);toast('할 일을 추가했어.');});
 $('#github-form').addEventListener('submit',async e=>{e.preventDefault();const b=e.submitter;b.disabled=true;try{await connectGitHub(e.target);}catch(err){toast(err.message,true);}finally{b.disabled=false;}});
 $('#web-auth-form').addEventListener('submit',async e=>{
-  e.preventDefault();const button=e.submitter;button.disabled=true;const previous=webCredential;webCredential=e.target.elements.accessToken.value.trim();$('#web-auth-error').textContent='';
-  try{const loaded=await loadWebState();if(loaded)state=loaded;else{const cached=localStorage.getItem(key);if(cached)state=validate(JSON.parse(cached));}sessionStorage.setItem(webStorageKey,webCredential);token=webCredential;localStorage.setItem(key,JSON.stringify(state));e.target.reset();$('#web-auth-modal').close();render();if(webMeta.pending&&webReady)flushWebState();}
-  catch(err){webCredential=previous;$('#web-auth-error').textContent=err.name==='AbortError'?'연결 시간이 초과됐어. 다시 시도해줘.':err.message;}
+  e.preventDefault();const button=e.submitter;button.disabled=true;$('#web-auth-error').textContent='';
+  try{await lifeDrive.migrateGithub(e.target.elements.accessToken.value.trim());e.target.reset();$('#web-auth-modal').close();render();}
+  catch(err){$('#web-auth-error').textContent=err.name==='AbortError'?'연결 시간이 초과됐어. 다시 시도해줘.':err.message;}
   finally{button.disabled=false;}
 });
 $('#global-search').addEventListener('input',e=>{search=e.target.value;if(view!=='tasks')filter='active';view='tasks';render();});
@@ -268,9 +280,7 @@ window.addEventListener('storage',e=>{if(e.key===key&&e.newValue){try{state=vali
   let cached;
   try{cached=validate(JSON.parse(localStorage.getItem(key)));}catch{}
   if(webHosted){
-    state=webCredential?(cached||empty()):empty();
-    if(webCredential){token=webCredential;try{const loaded=await loadWebState();if(loaded){state=loaded;localStorage.setItem(key,JSON.stringify(state));}}catch(e){webStatus(e.name==='AbortError'?'연결이 지연돼. 기존 기록을 보여줄게.':e.message,'error');}}
-    render();if(webCredential&&webMeta.pending&&webReady)flushWebState();return;
+    state=empty();render();return;
   }
   try{const r=await fetch('/api/state');if(r.ok&&r.headers.get('content-type')?.includes('application/json')){state=validate(await r.json());localServer=true;}}catch{}
   if(cached&&(!state||(cached.updatedAt||'')>(state.updatedAt||''))){state=cached;if(localServer)persist();}

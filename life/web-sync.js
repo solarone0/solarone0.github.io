@@ -65,5 +65,3 @@ function disconnectWeb(){
   lifeGoogle.disconnect(false);
   clearTimeout(webTimer);webCredential='';token='';webReady=false;sessionStorage.removeItem(webStorageKey);localStorage.removeItem(key);localStorage.removeItem(webMetaKey);webMeta={sha:null,pending:false};state=empty();render();
 }
-window.addEventListener('online',()=>{if(webHosted&&webMeta.pending)webSyncAction();});
-setInterval(()=>{if(webHosted&&webCredential&&webMeta.pending&&syncInfo.state!=='conflict')flushWebState();},30000);
