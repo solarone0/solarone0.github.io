@@ -2,7 +2,7 @@
 // Tokens and Google event contents live only in memory, outside workspace backups.
 const lifeGoogle = (() => {
   const storageKey='life-google-settings-v1';
-  const readScopes=['openid','email','https://www.googleapis.com/auth/calendar.calendarlist.readonly','https://www.googleapis.com/auth/calendar.events.readonly'];
+  const readScopes=['https://www.googleapis.com/auth/calendar.calendarlist.readonly','https://www.googleapis.com/auth/calendar.events.readonly'];
   const writeScope='https://www.googleapis.com/auth/calendar.app.created';
   const marker='life-workspace-calendar-v1';
   let settings={clientId:''};
@@ -49,20 +49,20 @@ const lifeGoogle = (() => {
     return scriptPromise;
   }
   function openSettings(){
-    const signedIn=webHosted&&window.lifeDrive?.ready();
+    const signedIn=webHosted&&typeof lifeDrive!=='undefined'&&lifeDrive.ready();
     $('#google-client-id').value=signedIn?lifeDrive.clientId():settings.clientId;$('#google-client-id').readOnly=!!signedIn;$('#google-auth-error').textContent='';$('#google-origin').textContent=location.origin;
     $('#google-modal').showModal();const button=$('#google-connect');button.disabled=true;button.textContent='구글 로그인 준비 중';
     loadScript().then(()=>{button.disabled=false;button.textContent='구글 계정 연결';}).catch(error=>{$('#google-auth-error').textContent=error.message;button.textContent='다시 열어서 시도해줘';});
   }
   function authorize(withWrite=false){
     if(connecting||writing)return;
-    const clientId=(webHosted&&window.lifeDrive?.ready()?lifeDrive.clientId():withWrite?settings.clientId:$('#google-client-id').value).trim();
+    const clientId=(webHosted&&typeof lifeDrive!=='undefined'&&lifeDrive.ready()?lifeDrive.clientId():withWrite?settings.clientId:$('#google-client-id').value).trim();
     if(!/^[0-9]+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/.test(clientId)){$('#google-auth-error').textContent='구글 OAuth 클라이언트 ID를 입력해줘.';return;}
     if(!window.google?.accounts?.oauth2){openSettings();return;}
     settings.clientId=clientId;try{localStorage.setItem(storageKey,JSON.stringify(settings));}catch{}
     const oldAccount=withWrite?calendars.find(c=>c.primary)?.id:'';
     reset();connecting=true;message='구글 계정을 연결하는 중';const session=epoch;
-    oauth=google.accounts.oauth2.initTokenClient({client_id:clientId,scope:[...readScopes,...(withWrite?[writeScope]:[])].join(' '),include_granted_scopes:false,
+    oauth=google.accounts.oauth2.initTokenClient({client_id:clientId,scope:['openid','https://www.googleapis.com/auth/userinfo.email',...readScopes,...(withWrite?[writeScope]:[])].join(' '),include_granted_scopes:false,
       callback:async response=>{
         if(session!==epoch)return;
         connecting=false;
@@ -70,9 +70,9 @@ const lifeGoogle = (() => {
         if(!google.accounts.oauth2.hasGrantedAllScopes(response,...readScopes,...(withWrite?[writeScope]:[]))){message='요청한 캘린더 권한을 모두 허용해줘.';$('#google-auth-error').textContent=message;repaint();return;}
         access=response.access_token;expires=Date.now()+Math.max(0,Number(response.expires_in||0)-30)*1000;
         try {
-          if(webHosted&&window.lifeDrive?.ready()){
+          if(webHosted&&typeof lifeDrive!=='undefined'&&lifeDrive.ready()){
             const identity=await fetch('https://openidconnect.googleapis.com/v1/userinfo',{headers:{Authorization:'Bearer '+access},cache:'no-store'});
-            if(!identity.ok||((await identity.json()).sub)!==lifeDrive.userId())throw Error('Life에 로그인한 구글 계정과 같은 계정을 선택해줘.');
+            if(!identity.ok||((await identity.json()).sub)!==lifeDrive.userId()){reset();throw Error('Life에 로그인한 구글 계정과 같은 계정을 선택해줘.');}
           }
           const loaded=await list('/users/me/calendarList',{maxResults:'250',minAccessRole:'reader'});
           if(session!==epoch)return;
